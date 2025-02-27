@@ -1099,7 +1099,8 @@ func (c *Conn) exec(ctx context.Context, req frameBuilder, tracer Tracer) (*fram
 	}
 
 	var timeoutCh <-chan time.Time
-	if c.timeout > 0 {
+	_, isDeadline := ctx.Deadline()
+	if c.timeout > 0 && !isDeadline {
 		if call.timer == nil {
 			call.timer = time.NewTimer(0)
 			<-call.timer.C
