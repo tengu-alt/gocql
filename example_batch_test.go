@@ -61,7 +61,7 @@ func Example_batch() {
 		Idempotent: true,
 	})
 
-	err = session.ExecuteBatch(b)
+	err = b.Exec()
 	if err != nil {
 		log.Fatal(err)
 	}
