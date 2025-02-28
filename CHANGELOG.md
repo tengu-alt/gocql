@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Refactor HostInfo creation and ConnectAddress() method (CASSGO-45)
 
+- Refactoring hostpool package test and Expose HostInfo creation (CASSGO-59)
+
 ### Fixed
 - Cassandra version unmarshal fix (CASSGO-49)
 
