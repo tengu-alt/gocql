@@ -250,6 +250,9 @@ func (s *Session) init() error {
 					filteredHosts = append(filteredHosts, host)
 				}
 			}
+			if len(filteredHosts) < 1 {
+				return errors.New("expected at least one host will pass the filter")
+			}
 
 			hosts = filteredHosts
 		}
