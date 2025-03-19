@@ -1,3 +1,6 @@
+//go:build all || unit
+// +build all unit
+
 /*
 Copyright 2015 To gocql authors
 Copyright 2013 Google Inc.

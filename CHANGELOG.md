@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - gocql.Compressor interface changes to follow append-like design. Bumped Go version to 1.19 (CASSGO-1)
 
+- Refactoring hostpool package test and Expose HostInfo creation (CASSGO-59)
+
 ### Fixed
 - Cassandra version unmarshal fix (CASSGO-49)
 
