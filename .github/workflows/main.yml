@@ -22,9 +22,9 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
-      - run: go vet
+      - run: go vet ./...
       - name: Run unit tests
-        run: go test -v -tags unit -race
+        run: go test -v -tags unit -race ./...
   integration-cassandra:
     timeout-minutes: 15
     needs:
