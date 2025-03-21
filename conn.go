@@ -1273,7 +1273,8 @@ func (c *Conn) execInternal(ctx context.Context, req frameBuilder, tracer Tracer
 	}
 
 	var timeoutCh <-chan time.Time
-	if timeout := c.r.GetTimeout(); timeout > 0 {
+	_, isDeadline := ctx.Deadline()
+	if timeout := c.r.GetTimeout(); timeout > 0 && !isDeadline {
 		if call.timer == nil {
 			call.timer = time.NewTimer(0)
 			<-call.timer.C
