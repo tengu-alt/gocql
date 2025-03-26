@@ -283,6 +283,8 @@ func (c Consistency) isSerial() bool {
 	return c == Serial || c == LocalSerial
 
 }
+
+// ParseConsistency returns parsed consistency or panics in case of an error.
 func ParseConsistency(s string) Consistency {
 	var c Consistency
 	if err := c.UnmarshalText([]byte(strings.ToUpper(s))); err != nil {
@@ -331,6 +333,7 @@ func (f frameHeader) Header() frameHeader {
 
 const defaultBufSize = 128
 
+// ObservedFrameHeader observe header of the frame.
 type ObservedFrameHeader struct {
 	Version protoVersion
 	Flags   byte
