@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - ci-integration-tests-simplify
   pull_request:
     types: [ opened, synchronize, reopened ]
 
@@ -36,13 +37,19 @@ jobs:
       matrix:
         go: [ '1.22', '1.23' ]
         cassandra_version: [ '4.0.13', '4.1.6' ]
-        auth: [ "false" ]
+        auth: [ "false", "true" ]
         compressor: [ "no-compression", "snappy", "lz4" ]
-        tags: [ "cassandra", "integration", "ccm" ]
+        tags: [ "cassandra integration ccm", "integration"  ]
         proto_version: [ "4", "5" ]
         exclude:
           - proto_version: "5"
             compressor: "snappy"
+          - auth: "true"
+            cassandra_version: '4.1.6'
+          - auth: "true"
+            tags: "cassandra integration ccm"
+          - auth: "false"
+            tags: "integration"
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
@@ -119,34 +126,11 @@ jobs:
         if: 'failure()'
         uses: actions/upload-artifact@v4
         with:
-          name: ccm-cluster-cassandra-${{ matrix.cassandra_version }}-go-${{ matrix.go }}-tag-${{ matrix.tags }}-proto-version-${{ matrix.proto_version }}-compressor-${{ matrix.compressor }}
+          name: ccm-cluster-cassandra-${{ matrix.cassandra_version }}-go-${{ matrix.go }}-tag-${{ matrix.tags }}-proto-version-${{ matrix.proto_version }}-compressor-${{ matrix.compressor }}-auth-${{ matrix.auth}}
           path: /home/runner/.ccm/test
           retention-days: 5
-  integration-auth-cassandra:
-    timeout-minutes: 15
-    needs:
-      - build
-    name: Integration Tests with auth
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go: [ '1.22', '1.23' ]
-        cassandra_version: [ '4.0.13' ]
-        compressor: [ "no-compression", "snappy", "lz4" ]
-        tags: [ "integration" ]
-        proto_version: [ "4", "5" ]
-        exclude:
-          - proto_version: "5"
-            compressor: "snappy"
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ matrix.go }}
-      - name: Setup environment
-        uses: ./.github/actions/setup-environment
-      - name: Start cassandra nodes
+      - name: Start cassndra nodes for auth tests if needed
+        if: ${{ matrix.auth == 'true' }}
         run: |
           source ~/venv/bin/activate
           VERSION=${{ matrix.cassandra_version }}
@@ -205,7 +189,8 @@ jobs:
           echo "args=$args" >> $GITHUB_ENV
           echo "JVM_EXTRA_OPTS=$JVM_EXTRA_OPTS" >> $GITHUB_ENV
           sleep 30s
-      - name: Integration tests
+      - name: Integration tests auth
+        if: ${{ matrix.auth == 'true' }}
         run: |
           source ~/venv/bin/activate
           export JVM_EXTRA_OPTS="${{env.JVM_EXTRA_OPTS}}"
