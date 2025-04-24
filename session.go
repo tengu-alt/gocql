@@ -775,6 +775,7 @@ func (s *Session) executeBatch(batch *Batch) *Iter {
 	return iter
 }
 
+// Deprecated: use Batch.Exec instead.
 // ExecuteBatch executes a batch operation and returns nil if successful
 // otherwise an error is returned describing the failure.
 func (s *Session) ExecuteBatch(batch *Batch) error {
@@ -782,13 +783,23 @@ func (s *Session) ExecuteBatch(batch *Batch) error {
 	return iter.Close()
 }
 
+// Deprecated: use Batch.ExecCAS instead
 // ExecuteBatchCAS executes a batch operation and returns true if successful and
 // an iterator (to scan additional rows if more than one conditional statement)
 // was sent.
 // Further scans on the interator must also remember to include
 // the applied boolean as the first argument to *Iter.Scan
 func (s *Session) ExecuteBatchCAS(batch *Batch, dest ...interface{}) (applied bool, iter *Iter, err error) {
-	iter = s.executeBatch(batch)
+	return batch.ExecCAS(dest...)
+}
+
+// ExecCAS executes a batch operation and returns true if successful and
+// an iterator (to scan additional rows if more than one conditional statement)
+// was sent.
+// Further scans on the interator must also remember to include
+// the applied boolean as the first argument to *Iter.Scan
+func (b *Batch) ExecCAS(dest ...interface{}) (applied bool, iter *Iter, err error) {
+	iter = b.session.executeBatch(b)
 	if err := iter.checkErrAndNotFound(); err != nil {
 		iter.Close()
 		return false, nil, err
@@ -804,11 +815,19 @@ func (s *Session) ExecuteBatchCAS(batch *Batch, dest ...interface{}) (applied bo
 	return applied, iter, iter.err
 }
 
+// Deprecated: use Batch.MapExecCAS instead
 // MapExecuteBatchCAS executes a batch operation much like ExecuteBatchCAS,
 // however it accepts a map rather than a list of arguments for the initial
 // scan.
 func (s *Session) MapExecuteBatchCAS(batch *Batch, dest map[string]interface{}) (applied bool, iter *Iter, err error) {
-	iter = s.executeBatch(batch)
+	return batch.MapExecCAS(dest)
+}
+
+// MapExecCAS executes a batch operation much like ExecuteBatchCAS,
+// however it accepts a map rather than a list of arguments for the initial
+// scan.
+func (b *Batch) MapExecCAS(dest map[string]interface{}) (applied bool, iter *Iter, err error) {
+	iter = b.session.executeBatch(b)
 	if err := iter.checkErrAndNotFound(); err != nil {
 		iter.Close()
 		return false, nil, err
@@ -1828,9 +1847,8 @@ type Batch struct {
 	routingInfo *queryRoutingInfo
 }
 
+// Deprecated: use Session.Batch instead
 // NewBatch creates a new batch operation using defaults defined in the cluster
-//
-// Deprecated: use session.Batch instead
 func (s *Session) NewBatch(typ BatchType) *Batch {
 	return s.Batch(typ)
 }

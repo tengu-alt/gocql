@@ -311,7 +311,7 @@
 //
 // The CQL protocol supports sending batches of DML statements (INSERT/UPDATE/DELETE) and so does gocql.
 // Use Session.Batch to create a new batch and then fill-in details of individual queries.
-// Then execute the batch with Session.ExecuteBatch.
+// Then execute the batch with Batch.Exec.
 //
 // Logged batches ensure atomicity, either all or none of the operations in the batch will succeed, but they have
 // overhead to ensure this property.
@@ -329,8 +329,8 @@
 // It is also possible to pass entire BEGIN BATCH .. APPLY BATCH statement to Query.Exec.
 // There are differences how those are executed.
 // BEGIN BATCH statement passed to Query.Exec is prepared as a whole in a single statement.
-// Session.ExecuteBatch prepares individual statements in the batch.
-// If you have variable-length batches using the same statement, using Session.ExecuteBatch is more efficient.
+// Batch.Exec prepares individual statements in the batch.
+// If you have variable-length batches using the same statement, using Batch.Exec is more efficient.
 //
 // See Example_batch for an example.
 //
@@ -340,9 +340,9 @@
 // INSERT/UPDATE .. IF statement) and reading its result. See example for Query.MapScanCAS.
 //
 // Multiple-statement lightweight transactions can be executed as a logged batch that contains at least one conditional
-// statement. All the conditions must return true for the batch to be applied. You can use Session.ExecuteBatchCAS and
-// Session.MapExecuteBatchCAS when executing the batch to learn about the result of the LWT. See example for
-// Session.MapExecuteBatchCAS.
+// statement. All the conditions must return true for the batch to be applied. You can use Batch.ExecCAS and
+// Batch.MapExecCAS when executing the batch to learn about the result of the LWT. See example for
+// Batch.MapExecCAS.
 //
 // # Retries and speculative execution
 //

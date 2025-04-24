@@ -72,7 +72,7 @@ func ExampleSession_MapExecuteBatchCAS() {
 			Args: []interface{}{"B", "pk1", "ck2", ck2Version},
 		})
 		m := make(map[string]interface{})
-		applied, iter, err := session.MapExecuteBatchCAS(b.WithContext(ctx), m)
+		applied, iter, err := b.WithContext(ctx).MapExecCAS(m)
 		if err != nil {
 			log.Fatal(err)
 		}

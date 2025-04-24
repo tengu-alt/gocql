@@ -457,7 +457,7 @@ func TestCAS(t *testing.T) {
 
 	successBatch := session.Batch(LoggedBatch)
 	successBatch.Query("INSERT INTO cas_table (title, revid, last_modified) VALUES (?, ?, ?) IF NOT EXISTS", title, revid, modified)
-	if applied, _, err := session.ExecuteBatchCAS(successBatch, &titleCAS, &revidCAS, &modifiedCAS); err != nil {
+	if applied, _, err := successBatch.ExecCAS(&titleCAS, &revidCAS, &modifiedCAS); err != nil {
 		t.Fatal("insert:", err)
 	} else if !applied {
 		t.Fatalf("insert should have been applied: title=%v revID=%v modified=%v", titleCAS, revidCAS, modifiedCAS)
@@ -466,7 +466,7 @@ func TestCAS(t *testing.T) {
 	successBatch = session.Batch(LoggedBatch)
 	successBatch.Query("INSERT INTO cas_table (title, revid, last_modified) VALUES (?, ?, ?) IF NOT EXISTS", title+"_foo", revid, modified)
 	casMap := make(map[string]interface{})
-	if applied, _, err := session.MapExecuteBatchCAS(successBatch, casMap); err != nil {
+	if applied, _, err := successBatch.MapExecCAS(casMap); err != nil {
 		t.Fatal("insert:", err)
 	} else if !applied {
 		t.Fatal("insert should have been applied")
@@ -474,7 +474,7 @@ func TestCAS(t *testing.T) {
 
 	failBatch := session.Batch(LoggedBatch)
 	failBatch.Query("INSERT INTO cas_table (title, revid, last_modified) VALUES (?, ?, ?) IF NOT EXISTS", title, revid, modified)
-	if applied, _, err := session.ExecuteBatchCAS(successBatch, &titleCAS, &revidCAS, &modifiedCAS); err != nil {
+	if applied, _, err := successBatch.ExecCAS(&titleCAS, &revidCAS, &modifiedCAS); err != nil {
 		t.Fatal("insert:", err)
 	} else if applied {
 		t.Fatalf("insert should have not been applied: title=%v revID=%v modified=%v", titleCAS, revidCAS, modifiedCAS)
@@ -483,14 +483,14 @@ func TestCAS(t *testing.T) {
 	insertBatch := session.Batch(LoggedBatch)
 	insertBatch.Query("INSERT INTO cas_table (title, revid, last_modified) VALUES ('_foo', 2c3af400-73a4-11e5-9381-29463d90c3f0, TOTIMESTAMP(NOW()))")
 	insertBatch.Query("INSERT INTO cas_table (title, revid, last_modified) VALUES ('_foo', 3e4ad2f1-73a4-11e5-9381-29463d90c3f0, TOTIMESTAMP(NOW()))")
-	if err := session.ExecuteBatch(insertBatch); err != nil {
+	if err := insertBatch.Exec(); err != nil {
 		t.Fatal("insert:", err)
 	}
 
 	failBatch = session.Batch(LoggedBatch)
 	failBatch.Query("UPDATE cas_table SET last_modified = TOTIMESTAMP(NOW()) WHERE title='_foo' AND revid=2c3af400-73a4-11e5-9381-29463d90c3f0 IF last_modified=TOTIMESTAMP(NOW());")
 	failBatch.Query("UPDATE cas_table SET last_modified = TOTIMESTAMP(NOW()) WHERE title='_foo' AND revid=3e4ad2f1-73a4-11e5-9381-29463d90c3f0 IF last_modified=TOTIMESTAMP(NOW());")
-	if applied, iter, err := session.ExecuteBatchCAS(failBatch, &titleCAS, &revidCAS, &modifiedCAS); err != nil {
+	if applied, iter, err := failBatch.ExecCAS(&titleCAS, &revidCAS, &modifiedCAS); err != nil {
 		t.Fatal("insert:", err)
 	} else if applied {
 		t.Fatalf("insert should have not been applied: title=%v revID=%v modified=%v", titleCAS, revidCAS, modifiedCAS)
@@ -521,20 +521,20 @@ func TestCAS(t *testing.T) {
 	notCASBatch := session.Batch(LoggedBatch)
 	notCASBatch.Query("INSERT INTO cas_table (title, revid, last_modified) VALUES (?, ?, ?)", title+"_baz", revid, modified)
 	casMap = make(map[string]interface{})
-	if _, _, err := session.MapExecuteBatchCAS(notCASBatch, casMap); err != ErrNotFound {
+	if _, _, err := notCASBatch.MapExecCAS(casMap); err != ErrNotFound {
 		t.Fatal("insert should have returned not found:", err)
 	}
 
 	notCASBatch = session.Batch(LoggedBatch)
 	notCASBatch.Query("INSERT INTO cas_table (title, revid, last_modified) VALUES (?, ?, ?)", title+"_baz", revid, modified)
 	casMap = make(map[string]interface{})
-	if _, _, err := session.ExecuteBatchCAS(notCASBatch, &revidCAS); err != ErrNotFound {
+	if _, _, err := notCASBatch.ExecCAS(&revidCAS); err != ErrNotFound {
 		t.Fatal("insert should have returned not found:", err)
 	}
 
 	failBatch = session.Batch(LoggedBatch)
 	failBatch.Query("UPDATE cas_table SET last_modified = TOTIMESTAMP(NOW()) WHERE title='_foo' AND revid=3e4ad2f1-73a4-11e5-9381-29463d90c3f0 IF last_modified = ?", modified)
-	if _, _, err := session.ExecuteBatchCAS(failBatch, new(bool)); err == nil {
+	if _, _, err := failBatch.ExecCAS(new(bool)); err == nil {
 		t.Fatal("update should have errored")
 	}
 	// make sure MapScanCAS does not panic when MapScan fails
@@ -550,7 +550,7 @@ func TestCAS(t *testing.T) {
 	failBatch.Query("UPDATE cas_table SET last_modified = TOTIMESTAMP(NOW()) WHERE title='_foo' AND revid=3e4ad2f1-73a4-11e5-9381-29463d90c3f0 IF last_modified = ?", modified)
 	casMap = make(map[string]interface{})
 	casMap["last_modified"] = false
-	if _, _, err := session.MapExecuteBatchCAS(failBatch, casMap); err == nil {
+	if _, _, err := failBatch.MapExecCAS(casMap); err == nil {
 		t.Fatal("update should have errored")
 	}
 }
@@ -752,7 +752,7 @@ func TestBatch(t *testing.T) {
 		batch.Query(`INSERT INTO batch_table (id) VALUES (?)`, i)
 	}
 
-	if err := session.ExecuteBatch(batch); err != nil {
+	if err := batch.Exec(); err != nil {
 		t.Fatal("execute batch:", err)
 	}
 
@@ -788,7 +788,7 @@ func TestUnpreparedBatch(t *testing.T) {
 		batch.Query(`UPDATE batch_unprepared SET c = c + 1 WHERE id = 1`)
 	}
 
-	if err := session.ExecuteBatch(batch); err != nil {
+	if err := batch.Exec(); err != nil {
 		t.Fatal("execute batch:", err)
 	}
 
@@ -824,8 +824,8 @@ func TestBatchLimit(t *testing.T) {
 	for i := 0; i < 65537; i++ {
 		batch.Query(`INSERT INTO batch_table2 (id) VALUES (?)`, i)
 	}
-	if err := session.ExecuteBatch(batch); err != ErrTooManyStmts {
-		t.Fatal("gocql attempted to execute a batch larger than the support limit of statements.")
+	if err := batch.Exec(); err != ErrTooManyStmts {
+		t.Fatalf("gocql attempted to execute a batch larger than the support limit of statements: expected %v, got %v", ErrTooManyStmts, err)
 	}
 
 }
@@ -876,7 +876,7 @@ func TestTooManyQueryArgs(t *testing.T) {
 
 	batch := session.Batch(UnloggedBatch)
 	batch.Query("INSERT INTO too_many_query_args (id, value) VALUES (?, ?)", 1, 2, 3)
-	err = session.ExecuteBatch(batch)
+	err = batch.Exec()
 
 	if err == nil {
 		t.Fatal("'`INSERT INTO too_many_query_args (id, value) VALUES (?, ?)`, 1, 2, 3' should return an error")
@@ -908,7 +908,7 @@ func TestNotEnoughQueryArgs(t *testing.T) {
 
 	batch := session.Batch(UnloggedBatch)
 	batch.Query("INSERT INTO not_enough_query_args (id, cluster, value) VALUES (?, ?, ?)", 1, 2)
-	err = session.ExecuteBatch(batch)
+	err = batch.Exec()
 
 	if err == nil {
 		t.Fatal("'`INSERT INTO not_enough_query_args (id, cluster, value) VALUES (?, ?, ?)`, 1, 2' should return an error")
@@ -1534,7 +1534,7 @@ func TestBatchQueryInfo(t *testing.T) {
 	batch := session.Batch(LoggedBatch)
 	batch.Bind("INSERT INTO batch_query_info (id, cluster, value) VALUES (?, ?,?)", write)
 
-	if err := session.ExecuteBatch(batch); err != nil {
+	if err := batch.Exec(); err != nil {
 		t.Fatalf("batch insert into batch_query_info failed, err '%v'", err)
 	}
 
@@ -2047,7 +2047,7 @@ func TestBatchStats(t *testing.T) {
 	b.Query("INSERT INTO batchStats (id) VALUES (?)", 1)
 	b.Query("INSERT INTO batchStats (id) VALUES (?)", 2)
 
-	if err := session.ExecuteBatch(b); err != nil {
+	if err := b.Exec(); err != nil {
 		t.Fatalf("query failed. %v", err)
 	} else {
 		if b.Attempts() < 1 {
@@ -2104,7 +2104,7 @@ func TestBatchObserve(t *testing.T) {
 		batch.Query(fmt.Sprintf(`INSERT INTO batch_observe_table (id,other) VALUES (?,%d)`, i), i)
 	}
 
-	if err := session.ExecuteBatch(batch); err != nil {
+	if err := batch.Exec(); err != nil {
 		t.Fatal("execute batch:", err)
 	}
 	if observedBatch == nil {
@@ -3408,7 +3408,7 @@ func TestUnsetColBatch(t *testing.T) {
 	b.Query("INSERT INTO gocql_test.batchUnsetInsert(id, my_int, my_text) VALUES (?,?,?)", 1, UnsetValue, "")
 	b.Query("INSERT INTO gocql_test.batchUnsetInsert(id, my_int, my_text) VALUES (?,?,?)", 2, 2, UnsetValue)
 
-	if err := session.ExecuteBatch(b); err != nil {
+	if err := b.Exec(); err != nil {
 		t.Fatalf("query failed. %v", err)
 	} else {
 		if b.Attempts() < 1 {

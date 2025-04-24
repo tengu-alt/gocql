@@ -52,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Refactoring hostpool package test and Expose HostInfo creation (CASSGO-59)
 
+- Move "execute batch" methods to Batch type (CASSGO-57)
+
 ### Fixed
 - Cassandra version unmarshal fix (CASSGO-49)
 
