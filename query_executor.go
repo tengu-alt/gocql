@@ -27,6 +27,7 @@ package gocql
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -89,14 +90,16 @@ func (q *queryExecutor) executeQuery(qry ExecutableQuery) (*Iter, error) {
 	// check if the host id is specified for the query,
 	// if it is, the query should be executed at the corresponding host.
 	if hostID := qry.GetHostID(); hostID != "" {
+		host, ok := q.pool.session.ring.getHost(hostID)
+		if !ok {
+			return nil, ErrNoConnections
+		}
+		var returnedHostOnce int32 = 0
 		hostIter = func() SelectedHost {
-			pool, ok := q.pool.getPoolByHostID(hostID)
-			// if the specified host is down
-			// we return nil to avoid endless query execution in queryExecutor.do()
-			if !ok || !pool.host.IsUp() {
-				return nil
+			if atomic.CompareAndSwapInt32(&returnedHostOnce, 0, 1) {
+				return (*selectedHost)(host)
 			}
-			return (*selectedHost)(pool.host)
+			return nil
 		}
 	}
 

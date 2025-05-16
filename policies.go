@@ -323,6 +323,7 @@ func (host *selectedHost) Info() *HostInfo {
 func (host *selectedHost) Mark(err error) {}
 
 // NextHost is an iteration function over picked hosts
+// Should return nil eventually to prevent endless query execution.
 type NextHost func() SelectedHost
 
 // RoundRobinHostPolicy is a round-robin load balancing policy, where each host

@@ -67,11 +67,11 @@ func (r *ring) getHostByIP(ip string) (*HostInfo, bool) {
 	return r.hosts[hi], ok
 }
 
-func (r *ring) getHost(hostID string) *HostInfo {
+func (r *ring) getHost(hostID string) (host *HostInfo, ok bool) {
 	r.mu.RLock()
-	host := r.hosts[hostID]
+	host, ok = r.hosts[hostID]
 	r.mu.RUnlock()
-	return host
+	return
 }
 
 func (r *ring) allHosts() []*HostInfo {

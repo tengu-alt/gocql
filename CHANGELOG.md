@@ -63,6 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Don't panic in MapExecuteBatchCAS if no `[applied]` column is returned (CASSGO-42)
 
+- Endless query execution fix (CASSGO-50)
+
 ## [1.7.0] - 2024-09-23
 
 This release is the first after the donation of gocql to the Apache Software Foundation (ASF)
